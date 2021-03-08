@@ -10,14 +10,22 @@ async fn main() -> io::Result<()> {
             .author("Gaurang Tandon")
             .about("client interface for rpc");
 
-    let server_addr = "0.0.0.1:5001";
+    let server_addr = "0.0.0.0:5000";
     let server_addr = server_addr
         .parse::<SocketAddr>().unwrap();
 
     let mut transport = tarpc::serde_transport::tcp::connect(server_addr, Json::default);
     transport.config_mut().max_frame_length(usize::MAX);
 
-    let client = service::WorldClient::new(client::Config::default(), transport.await?).spawn()?;
+    let mut client = service::WorldClient::new(client::Config::default(), transport.await?).spawn()?;
+
+    // The client has an RPC method for each RPC defined in the annotated trait. It takes the same
+    // args as defined, with the addition of a Context, which is always the first arg. The Context
+    // specifies a deadline and trace information which can be helpful in debugging requests.
+    let name = String::from("Hello");
+    let hello = client.hello(context::current(), name).await?;
+
+    println!("{}", hello);
 
     Ok(())
 }

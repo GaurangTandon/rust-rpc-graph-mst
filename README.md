@@ -10,3 +10,5 @@ Only two steps:
 
 Now you should be able to run `cargo run rust-rpc`. There are no warnings at this step, it's my own source code.
     - this will download the necessary packages from the internet before compilation
+
+The build will take some time (roughly 2mins)

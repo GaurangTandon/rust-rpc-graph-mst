@@ -3,7 +3,26 @@ name = "rust-rpc"
 version = "0.1.0"
 authors = ["Gaurang Tandon <gaurang.tandon@students.iiit.ac.in>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+readme = "./README.md"
+description = "Basic Rust RPC setup related to MSTs"
 
 [dependencies]
+clap = "2.33"
+env_logger = "0.8"
+futures = "0.3"
+serde = { version = "1.0" }
+tarpc = { version = "0.24", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+
+# this is the service that both client and world use
+[lib]
+name = "service"
+path = "src/lib.rs"
+
+[[bin]]
+name = "server"
+path = "src/server.rs"
+
+[[bin]]
+name = "client"
+path = "src/client.rs"

@@ -1,6 +1,6 @@
 use clap::{App, Arg};
 use futures::{future, prelude::*};
-use service::World;
+use service::GraphicalWorld;
 use std::{
     io,
     net::{IpAddr, SocketAddr},
@@ -10,16 +10,29 @@ use tarpc::{
     server::{self, Channel, Handler},
     tokio_serde::formats::Json,
 };
+use std::collections::HashMap;
+use std::hash::Hash;
 
 // This is the type that implements the generated World trait. It is the business logic
 // and is used to start the server.
 #[derive(Clone)]
 struct HelloServer(SocketAddr);
 
+
 #[tarpc::server]
-impl World for HelloServer {
-    async fn hello(self, _: context::Context, name: String) -> String {
-        format!("Hello, {}! You are connected from {:?}.", name, self.0)
+impl GraphicalWorld for HelloServer {
+    async fn add_graph(self, _: context::Context, name: String, n: u32) {
+        let addr = self.0;
+        println!("Received request to add graph {} of size {} from {:?}", name, n, addr);
+    }
+
+    async fn add_edge(self, _: context::Context, name: String, u: u32, v: u32, w: u32) {
+        let addr = self.0;
+    }
+
+    async fn get_mst(self, _: context::Context, name: String) -> i32 {
+        let addr = self.0;
+        0
     }
 }
 
@@ -35,6 +48,8 @@ async fn main() -> io::Result<()> {
 
     let port = app.value_of("port").unwrap();
     let port = port.parse().unwrap();
+
+    let mut graphs: HashMap<String, Vec<Vec<i32>>> = HashMap::new();
 
     let server_addr = (IpAddr::from([0, 0, 0, 0]), port);
     // JSON transport is provided by the json_transport tarpc module. It makes it easy

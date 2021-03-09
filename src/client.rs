@@ -28,6 +28,11 @@ async fn main() -> io::Result<()> {
         let mut inp = String::new();
         stdin.lock().read_line(&mut inp).unwrap();
 
+        if inp.is_empty() {
+            // EOF means end
+            break;
+        }
+
         let tokens: Vec<&str> = inp.split(" ").collect();
 
         if tokens.is_empty() {

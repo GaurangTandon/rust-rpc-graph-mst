@@ -13,6 +13,7 @@ use tarpc::{
 use std::collections::{HashMap, BTreeSet};
 use std::hash::Hash;
 use std::sync::{Mutex, Arc};
+use service::DSU;
 
 type Edge = (u32, u32, u32);
 type EdgeSet = BTreeSet<Edge>;
@@ -20,82 +21,12 @@ type GraphData = (u32, EdgeSet);
 type GraphMap = HashMap<String, GraphData>;
 type MutexLockedGraphMap = Arc<Mutex<GraphMap>>;
 
-// This is the type that implements the generated World trait. It is the business logic
-// and is used to start the server.
+// Used to start the server
 #[derive(Clone)]
-struct HelloServer(SocketAddr, MutexLockedGraphMap);
-
-struct DSU {
-    parents: Vec<usize>,
-    sizes: Vec<usize>,
-    n: usize,
-}
-
-impl DSU {
-    pub fn new(n: usize) -> Self {
-        let parents: Vec<usize> = (0..=n).collect();
-        let sizes = vec![1; n as usize + 1];
-
-        Self { parents, sizes, n }
-    }
-
-    fn find(&mut self, node: usize) -> usize {
-        if self.parents[node] != node {
-            self.parents[node] = self.find(self.parents[node]);
-        }
-
-        return self.parents[node];
-    }
-
-    fn merge(&mut self, a: usize, b: usize) -> bool {
-        let mut pa = self.find(a);
-        let mut pb = self.find(b);
-
-        if pa == pb {
-            return false;
-        }
-
-        let sa = self.sizes[pa];
-        let sb = self.sizes[pb];
-        if sa < sb {
-            let x = pa;
-            pa = pb;
-            pb = x;
-        }
-
-        self.sizes[pa] += self.sizes[pb];
-        self.parents[pb] = pa;
-
-        true
-    }
-
-    fn is_connected(&mut self) -> bool {
-        let parent = self.find(1);
-
-        for i in 2..=self.n {
-            if self.find(i) != parent {
-                return false;
-            }
-        }
-
-        true
-    }
-
-    pub fn get_mst(&mut self, edges: &EdgeSet) -> i32 {
-        let mut weight = 0;
-
-        for (w, u, v) in edges {
-            if self.merge(*u as usize, *v as usize) {
-                weight += *w;
-            }
-        }
-
-        if !self.is_connected() { -1 } else { weight as i32 }
-    }
-}
+struct ServerRunner(SocketAddr, MutexLockedGraphMap);
 
 #[tarpc::server]
-impl GraphicalWorld for HelloServer {
+impl GraphicalWorld for ServerRunner {
     async fn clear_graph(self, _: context::Context, name: String) {
         let addr = self.0;
         println!("Received request to clear graph {} from {:?}", name, addr);
@@ -186,7 +117,7 @@ async fn main() -> io::Result<()> {
         .map(|channel| {
             let addr = channel.as_ref().as_ref().peer_addr().unwrap();
             let graphs = Arc::clone(&graphs);
-            let server = HelloServer(addr, graphs);
+            let server = ServerRunner(addr, graphs);
             channel.respond_with(server.serve()).execute()
         })
         // Max 10 channels.

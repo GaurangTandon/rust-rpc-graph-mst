@@ -35,7 +35,7 @@ async fn main() -> io::Result<()> {
             break;
         }
 
-        let keyword = tokens[0];
+        let keyword = tokens[0].trim();
 
         if keyword == "quit" {
             break;
@@ -54,7 +54,8 @@ async fn main() -> io::Result<()> {
             let w: u32 = parse_int(tokens[4]);
             client.add_edge(context::current(), name, u, v, w).await?;
         } else if keyword == "get_mst" {
-            client.get_mst(context::current(), name).await?;
+            let totalweight = client.get_mst(context::current(), name).await?;
+            println!("{}", totalweight);
         } else {
             println!("Invalid input: {}", inp);
             break;

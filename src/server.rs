@@ -15,7 +15,9 @@ use std::hash::Hash;
 use std::sync::{Mutex, Arc};
 
 type Edge = (u32, u32, u32);
-type GraphMap = HashMap<String, BTreeSet<Edge>>;
+type EdgeSet = BTreeSet<Edge>;
+type GraphData = (u32, EdgeSet);
+type GraphMap = HashMap<String, GraphData>;
 type MutexLockedGraphMap = Arc<Mutex<GraphMap>>;
 
 // This is the type that implements the generated World trait. It is the business logic
@@ -23,6 +25,74 @@ type MutexLockedGraphMap = Arc<Mutex<GraphMap>>;
 #[derive(Clone)]
 struct HelloServer(SocketAddr, MutexLockedGraphMap);
 
+struct DSU {
+    parents: Vec<usize>,
+    sizes: Vec<usize>,
+    n: usize,
+}
+
+impl DSU {
+    pub fn new(n: usize) -> Self {
+        let parents: Vec<usize> = (0..=n).collect();
+        let sizes = vec![1; n as usize + 1];
+
+        Self { parents, sizes, n }
+    }
+
+    fn find(&mut self, node: usize) -> usize {
+        if self.parents[node] != node {
+            self.parents[node] = self.find(self.parents[node]);
+        }
+
+        return self.parents[node];
+    }
+
+    fn merge(&mut self, a: usize, b: usize) -> bool {
+        let mut pa = self.find(a);
+        let mut pb = self.find(b);
+
+        if pa == pb {
+            return false;
+        }
+
+        let sa = self.sizes[pa];
+        let sb = self.sizes[pb];
+        if sa < sb {
+            let x = pa;
+            pa = pb;
+            pb = x;
+        }
+
+        self.sizes[pa] += self.sizes[pb];
+        self.parents[pb] = pa;
+
+        true
+    }
+
+    fn is_connected(&mut self) -> bool {
+        let parent = self.find(1);
+
+        for i in 2..=self.n {
+            if self.find(i) != parent {
+                return false;
+            }
+        }
+
+        true
+    }
+
+    pub fn get_mst(&mut self, edges: &EdgeSet) -> i32 {
+        let mut weight = 0;
+
+        for (w, u, v) in edges {
+            if self.merge(*u as usize, *v as usize) {
+                weight += *w;
+            }
+        }
+
+        if !self.is_connected() { -1 } else { weight as i32 }
+    }
+}
 
 #[tarpc::server]
 impl GraphicalWorld for HelloServer {
@@ -41,6 +111,7 @@ impl GraphicalWorld for HelloServer {
         println!("Received request to add graph {} of size {} from {:?}", name, n, addr);
 
         let edges = BTreeSet::new();
+        let data = (n, edges);
 
         let mut graphs = self.1.lock().unwrap();
 
@@ -48,7 +119,7 @@ impl GraphicalWorld for HelloServer {
             panic!("Graph {} already exists!", name);
         }
 
-        graphs.insert(name, edges);
+        graphs.insert(name, data);
     }
 
     async fn add_edge(self, _: context::Context, name: String, u: u32, v: u32, w: u32) {
@@ -62,27 +133,24 @@ impl GraphicalWorld for HelloServer {
 
         let mut graphs = self.1.lock().unwrap();
         let edges = graphs.get_mut(&name);
-        edges.expect("Non existent graph cannot have edges inserted").insert((w, u, v));
-        println!("{:?}", graphs);
+        edges.expect("Non existent graph cannot have edges inserted").1.insert((w, u, v));
     }
 
     async fn get_mst(self, _: context::Context, name: String) -> i32 {
         let addr = self.0;
         println!("Received request to find mst of {} from {:?}", name, addr);
 
-        let mut edgeSet = BTreeSet::new();
+        let mut edgeSet = (1, BTreeSet::new());
 
         {
             let mut graphs = self.1.lock().unwrap();
             let edges = graphs.get(&name).expect("Non existent graph does not have MST");
-            edgeSet = edges.clone();
+            edgeSet.0 = edges.0;
+            edgeSet.1 = edges.1.clone();
         }
 
-        for (x, y, z) in edgeSet {
-            println!("{} {} {}", x, y, z);
-        }
-
-        0
+        let mut x = DSU::new(edgeSet.0 as usize);
+        x.get_mst(&edgeSet.1)
     }
 }
 

@@ -10,12 +10,12 @@ use tarpc::{
     server::{self, Channel, Handler},
     tokio_serde::formats::Json,
 };
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeSet};
 use std::hash::Hash;
 use std::sync::{Mutex, Arc};
 
 type Edge = (u32, u32, u32);
-type GraphMap = HashMap<String, Vec<Edge>>;
+type GraphMap = HashMap<String, BTreeSet<Edge>>;
 type MutexLockedGraphMap = Arc<Mutex<GraphMap>>;
 
 // This is the type that implements the generated World trait. It is the business logic
@@ -26,13 +26,28 @@ struct HelloServer(SocketAddr, MutexLockedGraphMap);
 
 #[tarpc::server]
 impl GraphicalWorld for HelloServer {
+    async fn clear_graph(self, _: context::Context, name: String) {
+        let addr = self.0;
+        println!("Received request to clear graph {} from {:?}", name, addr);
+
+        let mut graphs = self.1.lock().unwrap();
+        if graphs.contains_key(&name) {
+            graphs.remove(&name);
+        }
+    }
+
     async fn add_graph(self, _: context::Context, name: String, n: u32) {
         let addr = self.0;
         println!("Received request to add graph {} of size {} from {:?}", name, n, addr);
 
-        let edges: Vec<Edge> = vec![];
+        let edges = BTreeSet::new();
 
         let mut graphs = self.1.lock().unwrap();
+
+        if graphs.contains_key(&name) {
+            panic!("Graph {} already exists!", name);
+        }
+
         graphs.insert(name, edges);
     }
 
@@ -40,14 +55,33 @@ impl GraphicalWorld for HelloServer {
         let addr = self.0;
         println!("Received request to add edge {},{},{} from {:?}", u, v, w, addr);
 
+        if u == v {
+            println!("Input has self-loop, skipping");
+            return;
+        }
+
         let mut graphs = self.1.lock().unwrap();
         let edges = graphs.get_mut(&name);
-
-        edges.expect("Non existent graph provided").push((u, v, w));
+        edges.expect("Non existent graph cannot have edges inserted").insert((w, u, v));
+        println!("{:?}", graphs);
     }
 
     async fn get_mst(self, _: context::Context, name: String) -> i32 {
         let addr = self.0;
+        println!("Received request to find mst of {} from {:?}", name, addr);
+
+        let mut edgeSet = BTreeSet::new();
+
+        {
+            let mut graphs = self.1.lock().unwrap();
+            let edges = graphs.get(&name).expect("Non existent graph does not have MST");
+            edgeSet = edges.clone();
+        }
+
+        for (x, y, z) in edgeSet {
+            println!("{} {} {}", x, y, z);
+        }
+
         0
     }
 }

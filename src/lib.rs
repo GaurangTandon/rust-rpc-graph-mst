@@ -6,4 +6,6 @@ pub trait GraphicalWorld {
     async fn add_edge(name: String, u: u32, v: u32, w: u32);
     /// Gets MST weight for existing graph
     async fn get_mst(name: String) -> i32;
+    /// Clears graph for easy debugging
+    async fn clear_graph(name: String);
 }

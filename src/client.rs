@@ -2,6 +2,10 @@ use clap::{App, Arg};
 use tarpc::{client, context, tokio_serde::formats::Json};
 use std::{io, net::SocketAddr, io::BufRead};
 
+fn parse_int(n: &str) -> u32 {
+    n.trim().parse().unwrap()
+}
+
 #[tokio::main]
 async fn main() -> io::Result<()> {
     let app =
@@ -27,20 +31,33 @@ async fn main() -> io::Result<()> {
         let tokens: Vec<&str> = inp.split(" ").collect();
 
         if tokens.is_empty() {
-            println!("Invalid input\n");
-            continue;
+            println!("Invalid input: {}\n", inp);
+            break;
         }
 
         let keyword = tokens[0];
 
-        if keyword == "add_graph" {
-            let name = String::from(tokens[1]);
-            let n: u32 = tokens[2].trim().parse().unwrap();
-            client.add_graph(context::current(), name, n).await?;
-        } else if keyword == "add_edge" {} else if keyword == "get_mst" {} else if keyword == "quit" {
+        if keyword == "quit" {
             break;
+        }
+
+        let name = String::from(tokens[1].trim());
+
+        if keyword == "clear" {
+            client.clear_graph(context::current(), name).await?;
+        } else if keyword == "add_graph" {
+            let n: u32 = parse_int(tokens[2]);
+            client.add_graph(context::current(), name, n).await?;
+        } else if keyword == "add_edge" {
+            let u: u32 = parse_int(tokens[2]);
+            let v: u32 = parse_int(tokens[3]);
+            let w: u32 = parse_int(tokens[4]);
+            client.add_edge(context::current(), name, u, v, w).await?;
+        } else if keyword == "get_mst" {
+            client.get_mst(context::current(), name).await?;
         } else {
-            println!("Invalid input");
+            println!("Invalid input: {}", inp);
+            break;
         }
     }
 

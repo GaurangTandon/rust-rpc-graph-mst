@@ -11,7 +11,6 @@ use tarpc::{
     tokio_serde::formats::Json,
 };
 use std::collections::{HashMap, BTreeSet};
-use std::hash::Hash;
 use std::sync::{Mutex, Arc};
 use service::DSU;
 
@@ -74,7 +73,7 @@ impl GraphicalWorld for ServerRunner {
         let mut edge_set = (1, BTreeSet::new());
 
         {
-            let mut graphs = self.1.lock().unwrap();
+            let graphs = self.1.lock().unwrap();
             let edges = graphs.get(&name).expect("Non existent graph does not have MST");
             edge_set.0 = edges.0;
             edge_set.1 = edges.1.clone();
@@ -98,8 +97,8 @@ async fn main() -> io::Result<()> {
     let port = app.value_of("port").unwrap();
     let port = port.parse().unwrap();
 
-    let mut graphs: GraphMap = HashMap::new();
-    let mut graphs: MutexLockedGraphMap = Arc::new(Mutex::new(graphs));
+    let graphs: GraphMap = HashMap::new();
+    let graphs: MutexLockedGraphMap = Arc::new(Mutex::new(graphs));
 
     let server_addr = (IpAddr::from([0, 0, 0, 0]), port);
     // JSON transport is provided by the json_transport tarpc module. It makes it easy

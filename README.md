@@ -10,18 +10,15 @@ Single step:
 
 Now you should be able to run the project. There are no warnings at this step, it's my own source code.
 
-On the first run, it will download the necessary packages from the internet before compilation. That may take 5minutes
-depending on your connection speed.
-
-The build will take some time (roughly 2mins)
-
 ### Running the server/client
 
 0. `cd rust-rpc`
-1. `cargo run --bin client -- <server_ip> <server_port> < `
-2. `cargo run --bin server -- <port>`
+1. `cargo run --bin server -- <port>`
+2. `cargo run --bin client -- <server_ip> <server_port> < <input_file>`
 
 My server runs at `0.0.0.0`.
+
+On the first run, it will download the necessary packages from the internet before compilation. That may take 5minutes depending on your connection speed. The compilation itself may take upto one minute to complete.
 
 ## Report
 

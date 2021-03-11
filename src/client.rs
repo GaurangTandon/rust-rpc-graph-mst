@@ -12,15 +12,21 @@ async fn main() -> io::Result<()> {
         App::new("Client Interactor")
             .version("1.0.0")
             .author("Gaurang Tandon")
-            .about("client interface for rpc");
+            .about("client interface for rpc")
+            .arg(Arg::with_name("server_ip").index(0).takes_value(true).required(true))
+            .arg(Arg::with_name("port").index(1).takes_value(true).required(true))
+            .get_matches();
 
-    let server_addr = "0.0.0.0:5000";
+    let server_ip = app.value_of("server_ip").unwrap();
+    let server_port = app.value_of("port").unwrap();
+    let server_addr = format!("{}:{}", server_ip, server_port);
     let server_addr = server_addr
         .parse::<SocketAddr>().unwrap();
 
     let mut transport = tarpc::serde_transport::tcp::connect(server_addr, Json::default);
     transport.config_mut().max_frame_length(usize::MAX);
 
+    // this client is automagically created by tarpc
     let mut client = service::GraphicalWorldClient::new(client::Config::default(), transport.await?).spawn()?;
 
     let stdin = io::stdin();

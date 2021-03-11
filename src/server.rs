@@ -92,7 +92,7 @@ async fn main() -> io::Result<()> {
             .author("Gaurang Tandon")
             .version("1.0.0")
             .about("Server Interface for RPC")
-            .arg(Arg::with_name("port").long("port").takes_value(true).required(true))
+            .arg(Arg::with_name("port").index(0).takes_value(true).required(true))
             .get_matches();
 
     let port = app.value_of("port").unwrap();
@@ -105,7 +105,7 @@ async fn main() -> io::Result<()> {
     // JSON transport is provided by the json_transport tarpc module. It makes it easy
     // to start up a serde-powered json serialization strategy over TCP.
     let mut listener = tarpc::serde_transport::tcp::listen(&server_addr, Json::default).await?;
-    listener.config_mut().max_frame_length(4294967296);
+    listener.config_mut().max_frame_length(u32::MAX as usize);
     listener
         // Ignore accept errors.
         .filter_map(|r| future::ready(r.ok()))

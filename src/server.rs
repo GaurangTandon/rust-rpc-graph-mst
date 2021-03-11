@@ -71,17 +71,17 @@ impl GraphicalWorld for ServerRunner {
         let addr = self.0;
         println!("Received request to find mst of {} from {:?}", name, addr);
 
-        let mut edgeSet = (1, BTreeSet::new());
+        let mut edge_set = (1, BTreeSet::new());
 
         {
             let mut graphs = self.1.lock().unwrap();
             let edges = graphs.get(&name).expect("Non existent graph does not have MST");
-            edgeSet.0 = edges.0;
-            edgeSet.1 = edges.1.clone();
+            edge_set.0 = edges.0;
+            edge_set.1 = edges.1.clone();
         }
 
-        let mut x = DSU::new(edgeSet.0 as usize);
-        x.get_mst(&edgeSet.1)
+        let mut x = DSU::new(edge_set.0 as usize);
+        x.get_mst(&edge_set.1)
     }
 }
 
@@ -92,7 +92,7 @@ async fn main() -> io::Result<()> {
             .author("Gaurang Tandon")
             .version("1.0.0")
             .about("Server Interface for RPC")
-            .arg(Arg::with_name("port").index(0).takes_value(true).required(true))
+            .arg(Arg::with_name("port").index(1).takes_value(true).required(true))
             .get_matches();
 
     let port = app.value_of("port").unwrap();

@@ -13,8 +13,8 @@ async fn main() -> io::Result<()> {
             .version("1.0.0")
             .author("Gaurang Tandon")
             .about("client interface for rpc")
-            .arg(Arg::with_name("server_ip").index(0).takes_value(true).required(true))
-            .arg(Arg::with_name("port").index(1).takes_value(true).required(true))
+            .arg(Arg::with_name("server_ip").index(1).takes_value(true).required(true))
+            .arg(Arg::with_name("port").index(2).takes_value(true).required(true))
             .get_matches();
 
     let server_ip = app.value_of("server_ip").unwrap();
@@ -34,8 +34,8 @@ async fn main() -> io::Result<()> {
         let mut inp = String::new();
         stdin.lock().read_line(&mut inp).unwrap();
 
+        // EOF
         if inp.is_empty() {
-            // EOF means end
             break;
         }
 
@@ -54,6 +54,7 @@ async fn main() -> io::Result<()> {
 
         let name = String::from(tokens[1].trim());
 
+        // all RPC calls take place here
         if keyword == "clear" {
             client.clear_graph(context::current(), name).await?;
         } else if keyword == "add_graph" {

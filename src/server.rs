@@ -27,8 +27,8 @@ struct ServerRunner(SocketAddr, MutexLockedGraphMap);
 #[tarpc::server]
 impl GraphicalWorld for ServerRunner {
     async fn clear_graph(self, _: context::Context, name: String) {
-        let addr = self.0;
-        println!("Received request to clear graph {} from {:?}", name, addr);
+        // let addr = self.0;
+        // println!("Received request to clear graph {} from {:?}", name, addr);
 
         let mut graphs = self.1.lock().unwrap();
         if graphs.contains_key(&name) {
@@ -37,8 +37,8 @@ impl GraphicalWorld for ServerRunner {
     }
 
     async fn add_graph(self, _: context::Context, name: String, n: u32) {
-        let addr = self.0;
-        println!("Received request to add graph {} of size {} from {:?}", name, n, addr);
+        // let addr = self.0;
+        // println!("Received request to add graph {} of size {} from {:?}", name, n, addr);
 
         let edges = BTreeSet::new();
         let data = (n, edges);
@@ -53,11 +53,11 @@ impl GraphicalWorld for ServerRunner {
     }
 
     async fn add_edge(self, _: context::Context, name: String, u: u32, v: u32, w: u32) {
-        let addr = self.0;
-        println!("Received request to add edge {},{},{} from {:?}", u, v, w, addr);
+        // let addr = self.0;
+        // println!("Received request to add edge {},{},{} from {:?}", u, v, w, addr);
 
         if u == v {
-            println!("Input has self-loop, skipping");
+            // println!("Input has self-loop, skipping");
             return;
         }
 
@@ -67,8 +67,8 @@ impl GraphicalWorld for ServerRunner {
     }
 
     async fn get_mst(self, _: context::Context, name: String) -> i32 {
-        let addr = self.0;
-        println!("Received request to find mst of {} from {:?}", name, addr);
+        // let addr = self.0;
+        // println!("Received request to find mst of {} from {:?}", name, addr);
 
         let mut edge_set = (1, BTreeSet::new());
 
